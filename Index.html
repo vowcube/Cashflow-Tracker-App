@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <!-- Import Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Import Materialize CSS for a professional UI -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    <!-- Import Google Charts -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+      /* Global Styles */
+      body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f5f5f5;
+      }
+      .container {
+        margin-top: 40px;
+        margin-bottom: 80px; /* Increased bottom margin to accommodate fixed footer */
+      }
+      h4, h5 {
+        color: #333;
+      }
+      footer {
+        text-align: center;
+        padding: 20px 0;
+        background-color: #333;
+        color: #fff;
+        position: fixed;
+        width: 100%;
+        bottom: 0;
+      }
+      .card-panel {
+        border-radius: 8px;
+      }
+      /* Form Styles */
+      .input-field input:focus + label,
+      .input-field select:focus + label {
+        color: #1e88e5 !important;
+      }
+      .input-field input:focus,
+      .input-field select:focus {
+        border-bottom: 2px solid #1e88e5 !important;
+        box-shadow: 0 1px 0 0 #1e88e5 !important;
+      }
+      /* Button Styles */
+      .btn-custom {
+        background-color: #1e88e5;
+        border-radius: 20px;
+        padding: 10px 30px;
+        transition: background-color 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 48px; /* Ensures consistent button height */
+      }
+      .btn-custom:hover {
+        background-color: #1565c0;
+      }
+      /* Dashboard Styles */
+      .dashboard-card {
+        padding: 20px;
+      }
+      /* Status Message */
+      #status {
+        min-height: 24px;
+        margin-top: 10px;
+      }
+      /* Graph Container */
+      .chart-container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      @media (max-width: 600px) {
+        .dropdown-content li > a {
+          font-size: 16px; /* Increase font size for readability */
+          padding: 10px 16px; /* Increase padding for better tap targets */
+        }
+        .btn-custom {
+          width: 100%; /* Make buttons full-width on smaller screens */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation Bar -->
+    <nav class="blue darken-1">
+      <div class="nav-wrapper container">
+        <a href="#" class="brand-logo">Cash Flow Manager</a> <!-- **Change the app name here** -->
+        <a href="#" data-target="mobile-demo" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+        <ul class="right hide-on-med-and-down">
+          <li><a href="#">Dashboard</a></li>
+          <li><a href="#">Transactions</a></li>
+          <li><a href="#">Settings</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Side Navigation for Mobile -->
+    <ul class="sidenav" id="mobile-demo">
+      <li><a href="#">Dashboard</a></li>
+      <li><a href="#">Transactions</a></li>
+      <li><a href="#">Settings</a></li>
+    </ul>
+
+    <div class="container">
+      <!-- Transaction Entry Form -->
+      <div class="card-panel">
+        <h4>Cash Flow Entry</h4> <!-- **Change the section title if needed** -->
+        <form id="transactionForm">
+          <div class="row">
+            <div class="input-field col s12 m6">
+              <input type="date" id="date" required>
+              <label for="date">Date</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <select id="transactionType" required>
+                <option value="" disabled selected>Choose Transaction Type</option>
+                <option value="Income">Income</option>
+                <option value="Expense">Expense</option>
+              </select>
+              <label>Transaction Type</label>
+            </div>
+          </div>
+
+          <!-- Choose which sheet to add to -->
+          <div class="row">
+            <div class="input-field col s12 m6">
+              <select id="targetSheet" required>
+                <option value="" disabled selected>Choose Target Sheet</option>
+                <option value="Daily">Daily</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Yearly">Yearly</option>
+              </select>
+              <label>Add To:</label>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12">
+              <input type="text" id="description">
+              <label for="description">Description</label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-field col s12 m6">
+              <input type="number" id="planned" step="0.01">
+              <label for="planned">Planned</label>
+            </div>
+            <div class="input-field col s12 m6">
+              <input type="number" id="actual" step="0.01">
+              <label for="actual">Actual</label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="input-field col s12">
+              <input type="text" id="category">
+              <label for="category">Category or Notes</label>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col s12">
+              <button class="btn waves-effect waves-light btn-custom" type="button" onclick="submitTransaction()">Submit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Status Message -->
+      <div id="status"></div>
+
+      <!-- Dashboard Section -->
+      <div class="card-panel dashboard-card">
+        <h4>Dashboard</h4>
+        <!-- Date Range Selection -->
+        <div class="row">
+          <div class="input-field col s12 m4">
+            <input type="date" id="startDate" required>
+            <label for="startDate">Start Date</label>
+          </div>
+          <div class="input-field col s12 m4">
+            <input type="date" id="endDate" required>
+            <label for="endDate">End Date</label>
+          </div>
+          <div class="input-field col s12 m4" style="padding-top: 20px;">
+            <button class="btn waves-effect waves-light btn-custom" onclick="filterDashboard()">Filter</button>
+          </div>
+        </div>
+        <!-- Dashboard summary will load here -->
+        <div id="dashboard">
+          <!-- Initial Dashboard will load based on the full date range -->
+        </div>
+      </div>
+      
+      <!-- Graph Section -->
+      <div class="chart-container">
+        <h5>Cash Flow Movement</h5> <!-- **Change the graph title if needed** -->
+        <div class="row">
+          <div class="input-field col s12 m4">
+            <select id="graphGranularity" onchange="loadGraphData()">
+              <option value="Daily" selected>Daily</option>
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+            <label>Select Time Granularity</label>
+          </div>
+        </div>
+        <div id="cashFlowChart" style="width: 100%; height: 500px;"></div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+      <p>© 2025 VowCube. All rights reserved.</p> <!-- **Change the footer content if needed** -->
+    </footer>
+    
+    <!-- Import Materialize JS and initialize components -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script type="text/javascript">
+      // Initialize Google Charts
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(initGraph);
+
+      document.addEventListener('DOMContentLoaded', function () {
+        const elems = document.querySelectorAll('select');
+        const sidenavElems = document.querySelectorAll('.sidenav');
+        M.Sidenav.init(sidenavElems);
+
+        // Initialize dropdowns for larger screens
+        M.FormSelect.init(elems, { constrainWidth: false });
+
+        // Reinitialize dropdowns on form reset or dynamic changes
+        document.querySelector('#transactionForm').addEventListener('reset', () => {
+          const selects = document.querySelectorAll('select');
+          M.FormSelect.init(selects, { constrainWidth: false });
+        });
+
+        // Initialize date range inputs
+        initializeDateRange();
+      });
+      
+      /**
+       * **initializeDateRange Function**
+       * 
+       * Fetches the minimum and maximum dates from the server and sets them as the
+       * boundaries for the date range inputs. It also initializes the dashboard with
+       * the full date range.
+       * 
+       * **Functionality Called:**
+       * - `getDateRange()`
+       * - `loadDashboard()`
+       */
+      function initializeDateRange() {
+        google.script.run.withSuccessHandler(function(range) {
+          if (range.minDate && range.maxDate) {
+            const startDateInput = document.getElementById("startDate");
+            const endDateInput = document.getElementById("endDate");
+
+            startDateInput.setAttribute("min", range.minDate);
+            startDateInput.setAttribute("max", range.maxDate);
+            endDateInput.setAttribute("min", range.minDate);
+            endDateInput.setAttribute("max", range.maxDate);
+
+            // Set default values to cover the entire range
+            startDateInput.value = range.minDate;
+            endDateInput.value = range.maxDate;
+
+            // Initially load the dashboard with the full range
+            loadDashboard(range.minDate, range.maxDate);
+          } else {
+            displayStatus("No data available to set date range.", false);
+          }
+        }).getDateRange();
+      }
+
+      /**
+       * **submitTransaction Function**
+       * 
+       * Collects data from the transaction form and sends it to the server to be added
+       * to the appropriate sheet. It handles success and error responses to provide
+       * feedback to the user.
+       * 
+       * **Functionality Called:**
+       * - `addTransaction()`
+       * - `displayStatus()`
+       * - `initializeDateRange()`
+       * - `loadGraphData()`
+       */
+      function submitTransaction() {
+        const form = document.getElementById('transactionForm');
+        const data = {
+          date: form.date.value,
+          transactionType: form.transactionType.value,
+          description: form.description.value.trim(),
+          planned: form.planned.value,
+          actual: form.actual.value,
+          category: form.category.value.trim(),
+          targetSheet: form.targetSheet.value
+        };
+        
+        // Basic validation
+        if (!data.date || !data.transactionType || !data.targetSheet) {
+          displayStatus("Please fill in all required fields.", false);
+          return;
+        }
+        
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response === true) {
+              displayStatus("Transaction submitted successfully!", true);
+              form.reset();
+              // Re-initialize select elements after reset
+              M.FormSelect.init(document.querySelectorAll('select'));
+              initializeDateRange();  // Refresh date range and dashboard
+              loadGraphData();        // Refresh graph
+            } else {
+              displayStatus("Unexpected response from server.", false);
+            }
+          })
+          .withFailureHandler(function(err) {
+            displayStatus("Error: " + err.message, false);
+          })
+          .addTransaction(data);
+      }
+      
+      /**
+       * **loadDashboard Function**
+       * 
+       * Fetches and displays the dashboard summary based on the selected date range.
+       * 
+       * **Functionality Called:**
+       * - `getDashboardData()`
+       */
+      function loadDashboard(startDate, endDate) {
+        google.script.run.withSuccessHandler(function(html) {
+          document.getElementById('dashboard').innerHTML = html;
+        }).getDashboardData(startDate, endDate);
+      }
+      
+      /**
+       * **filterDashboard Function**
+       * 
+       * Filters the dashboard data based on the user's selected start and end dates.
+       * It ensures that the start date is not after the end date before fetching data.
+       * 
+       * **Functionality Called:**
+       * - `getDashboardData()`
+       * - `displayStatus()`
+       */
+      function filterDashboard() {
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+      
+        if (!startDate || !endDate) {
+          displayStatus("Please select a valid date range.", false);
+          return;
+        }
+      
+        // Ensure startDate is not after endDate
+        if (new Date(startDate) > new Date(endDate)) {
+          displayStatus("Start Date cannot be after End Date.", false);
+          return;
+        }
+      
+        google.script.run
+          .withSuccessHandler(function(html) {
+            document.getElementById('dashboard').innerHTML = html;
+          })
+          .withFailureHandler(function(err) {
+            displayStatus("Error: " + err.message, false);
+          })
+          .getDashboardData(startDate, endDate);
+      }
+      
+      /**
+       * **loadGraphData Function**
+       * 
+       * Fetches graph data based on the selected time granularity and draws the chart.
+       * 
+       * **Functionality Called:**
+       * - `getGraphData()`
+       * - `drawChart()`
+       */
+      function loadGraphData() {
+        const granularitySelect = document.getElementById('graphGranularity');
+        const granularity = granularitySelect.value;
+        
+        google.script.run.withSuccessHandler(function(data) {
+          drawChart(data);
+        }).getGraphData(granularity);
+      }
+      
+      /**
+       * **displayStatus Function**
+       * 
+       * Shows status messages to the user, such as success or error notifications.
+       * Messages fade out after 5 seconds.
+       * 
+       * **Parameters:**
+       * - `message` (string): The message to display.
+       * - `isSuccess` (boolean): Determines the color of the message (green for success, red for error).
+       */
+      function displayStatus(message, isSuccess) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerText = message;
+        statusDiv.style.color = isSuccess ? '#43a047' : '#e53935'; // Green for success, red for error
+        statusDiv.style.fontWeight = '500';
+        statusDiv.style.textAlign = 'center';
+        statusDiv.style.fontSize = '1.1em';
+        // Add fade out effect after 5 seconds
+        setTimeout(() => {
+          statusDiv.innerText = '';
+        }, 5000);
+      }
+      
+      /**
+       * **initGraph Function**
+       * 
+       * Initializes the graph by loading the initial graph data.
+       * 
+       * **Functionality Called:**
+       * - `loadGraphData()`
+       */
+      function initGraph() {
+        loadGraphData();
+      }
+      
+      /**
+       * **drawChart Function**
+       * 
+       * Uses Google Charts to render the cash flow movement chart based on the provided data.
+       * 
+       * **Parameters:**
+       * - `data` (Array<Object>): The data for the chart.
+       * 
+       * **Functionality Called:**
+       * - `google.visualization.DataTable()`
+       * - `google.visualization.LineChart()`
+       */
+      function drawChart(data) {
+        if (data.length === 0) {
+          document.getElementById('cashFlowChart').innerHTML = "<p style='text-align:center;'>No data available for the selected period.</p>";
+          return;
+        }
+        
+        // Prepare data for Google Charts
+        const dataTable = new google.visualization.DataTable();
+        dataTable.addColumn('string', 'Period');
+        dataTable.addColumn('number', 'Planned Income');
+        dataTable.addColumn('number', 'Actual Income');
+        dataTable.addColumn('number', 'Planned Expense');
+        dataTable.addColumn('number', 'Actual Expense');
+        
+        data.forEach(function(row) {
+          dataTable.addRow([
+            row.period,
+            row.plannedIncome,
+            row.actualIncome,
+            row.plannedExpense,
+            row.actualExpense
+          ]);
+        });
+        
+        const options = {
+          title: 'Cash Flow Movement', // **Change the chart title here if needed**
+          curveType: 'function',
+          legend: { position: 'bottom' },
+          hAxis: {
+            title: 'Period',
+            slantedText: false,
+            slantedTextAngle: 45,
+            textStyle: {
+              fontSize: 12
+            },
+            gridlines: {
+              count: -1
+            }
+          },
+          vAxis: {
+            title: 'Amount (RM)',
+            format: 'RM#,##0.00'
+          },
+          colors: ['#4caf50', '#81c784', '#f44336', '#e57373'], // Custom colors
+          backgroundColor: '#fafafa',
+          chartArea: { width: '80%', height: '70%' },
+          tooltip: { isHtml: true }
+        };
+        
+        const chart = new google.visualization.LineChart(document.getElementById('cashFlowChart'));
+        chart.draw(dataTable, options);
+      }
+      
+      /**
+       * **Window Resize Handler**
+       * 
+       * Redraws the chart when the window is resized to maintain responsiveness.
+       */
+      window.onresize = function() {
+        loadGraphData();
+      };
+      
+      /**
+       * **Window Load Handler**
+       * 
+       * Loads the graph data when the window finishes loading.
+       */
+      window.onload = function() {
+        // Date range is initialized and dashboard is loaded in initializeDateRange()
+        loadGraphData();
+      };
+    </script>
+  </body>
+</html>
